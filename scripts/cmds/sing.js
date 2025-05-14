@@ -1,126 +1,119 @@
 const axios = require("axios");
-const fs = require("fs");
-const yts = require("yt-search");
-const path = require("path");
-const cacheDir = path.join(__dirname, "/cache");
-
-module.exports = {
- config: {
- name: "sing",
- version: "1.2",
- aliases: [],
- author: "ROBIUL 😍",
- countDown: 5,
- role: 0,
- description: {
- en: "Search and download audio from YouTube",
- },
- category: "media",
- guide: {
- en: "{pn} <search term>: search YouTube and download selected audio",
- },
- },
-
- onStart: async ({ api, args, event }) => {
- if (args.length < 1) {
- return api.sendMessage("❌ Please use the format '/sing <search term>'.", event.threadID, event.messageID);
- }
-
- const searchTerm = args.join(" ");
- api.setMessageReaction("⏳", event.messageID, () => {}, true);
-
- try {
- const searchResults = await yts(searchTerm);
- const topVideo = searchResults.videos[0];
-
- if (!topVideo) {
- api.setMessageReaction("❌", event.messageID, () => {}, true);
- return api.sendMessage(`🔍 No results found for: ${searchTerm}`, event.threadID, event.messageID);
- }
-
- const videoUrl = topVideo.url;
- try {
- const downloadUrlEndpoint = `http://152.42.220.111:25744/allLink?link=${encodeURIComponent(videoUrl)}`;
- const respo = await axios.get(downloadUrlEndpoint);
- const downloadUrl = respo.data.download_url;
-
- if (!downloadUrl) {
- api.setMessageReaction("❌", event.messageID, () => {}, true);
- return api.sendMessage("❌ Could not retrieve an MP3 file. Please try again with a different search.", event.threadID, event.messageID);
- }
-
- const totalSize = await getTotalSize(downloadUrl);
- const audioPath = path.join(cacheDir, `ytb_audio_${topVideo.videoId}.mp3`);
- await downloadFileParallel(downloadUrl, audioPath, totalSize, 5);
-
- api.setMessageReaction("✅", event.messageID, () => {}, true);
- await api.sendMessage(
- {
- body: `📥 Audio download successful:\n• Title: ${topVideo.title}\n• Channel: ${topVideo.author.name}`,
- attachment: fs.createReadStream(audioPath),
- },
- event.threadID,
- () => fs.unlinkSync(audioPath),
- event.messageID
- );
- } catch (e) {
- api.setMessageReaction("❌", event.messageID, () => {}, true);
- console.error(e);
- return api.sendMessage("❌ Failed to download.", event.threadID, event.messageID);
- }
- } catch (error) {
- api.setMessageReaction("❌", event.messageID, () => {}, true);
- console.error(error);
- return api.sendMessage("❌ Failed to search YouTube.", event.threadID, event.messageID);
- }
- },
+const fs = require('fs')
+const baseApiUrl = async () => {
+  const base = await axios.get(
+`https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json`,
+  );
+  return base.data.api;
 };
-
-async function getTotalSize(url) {
- const response = await axios.head(url);
- return parseInt(response.headers["content-length"], 10);
+module.exports = {
+  config: {
+    name: "sing",
+    version: "1.1.5",
+    aliases: [ "music", "play"],
+    author: "ROBIUL 😍",
+    countDown: 5,
+    role: 0,
+    description: {
+      en: "Download audio from YouTube"
+    },
+    category: "media",
+    guide: {
+      en: "{pn} [<song name>|<song link>]:"+ "\n   Example:"+"\n{pn} chipi chipi chapa chapa"
+    }
+  },
+  onStart: async ({api,args, event,commandName, message }) =>{
+    const checkurl = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})(?:\S+)?$/;
+    let videoID;
+    const urlYtb = checkurl.test(args[0]);
+     
+if (urlYtb) {
+  const match = args[0].match(checkurl);
+  videoID = match ? match[1] : null;
+        const { data: { title, downloadLink } } = await axios.get(
+          `${await baseApiUrl()}/ytDl3?link=${videoID}&format=mp3`
+        );
+    return  api.sendMessage({
+      body: title,
+      attachment: await dipto(downloadLink,'audio.mp3')
+    },event.threadID,()=>fs.unlinkSync('audio.mp3'),event.messageID)
 }
-
-async function downloadFileParallel(url, filePath, totalSize, numChunks) {
- const chunkSize = Math.ceil(totalSize / numChunks);
- const chunks = [];
- const progress = Array(numChunks).fill(0);
-
- async function downloadChunk(url, start, end, index) {
- try {
- const response = await axios.get(url, {
- headers: { Range: `bytes=${start}-${end}` },
- responseType: "arraybuffer",
- timeout: 15000,
- });
-
- progress[index] = response.data.byteLength;
- return response.data;
- } catch (error) {
- throw error;
+    let keyWord = args.join(" ");
+    keyWord = keyWord.includes("?feature=share") ? keyWord.replace("?feature=share", "") : keyWord;
+    const maxResults = 6;
+    let result;
+    try {
+      result = ((await axios.get(`${await baseApiUrl()}/ytFullSearch?songName=${keyWord}`)).data).slice(0, maxResults);
+    } catch (err) {
+      return api.sendMessage(" An error occurred:"+err.message,event.threadID,event.messageID);
+    }
+    if (result.length == 0)
+      return api.sendMessage(" No search results match the keyword:"+ keyWord,event.threadID,event.messageID);
+    let msg = "";
+    let i = 1;
+    const thumbnails = [];
+    for (const info of result) {
+thumbnails.push(diptoSt(info.thumbnail,'photo.jpg'));
+      msg += `${i++}. ${info.title}\nTime: ${info.time}\nChannel: ${info.channel.name}\n\n`;
+    }
+    api.sendMessage({
+      body: msg+ "Reply to this message with a number want to listen",
+      attachment: await Promise.all(thumbnails)
+    },event.threadID, (err, info) => {
+global.GoatBot.onReply.set(info.messageID, {
+        commandName,
+        messageID: info.messageID,
+        author: event.senderID,
+        result
+      });
+    },event.messageID);
+  },
+  onReply: async ({ event, api, Reply }) => {
+    try {
+    const { result } = Reply;
+    const choice = parseInt(event.body);
+    if (!isNaN(choice) && choice <= result.length && choice > 0) {
+      const infoChoice = result[choice - 1];
+      const idvideo = infoChoice.id;
+  const { data: { title, downloadLink ,quality} } = await axios.get(`${await baseApiUrl()}/ytDl3?link=${idvideo}&format=mp3`);
+    await api.unsendMessage(Reply.messageID)
+        await  api.sendMessage({
+          body: ` Title: ${title}\n Quality: ${quality}`,
+          attachment: await dipto(downloadLink,'audio.mp3')
+        },event.threadID ,
+       ()=>fs.unlinkSync('audio.mp3')
+      ,event.messageID)
+    } else {
+      api.sendMessage("Invalid choice. Please enter a number between 1 and 6.",event.threadID,event.messageID);
+    }
+    } catch (error) {
+      console.log(error);
+      api.sendMessage(" Sorry, audio size was less than 26MB\n"+downloadLink,event.threadID,event.messageID)
+    }   
  }
- }
+};
+async function dipto(url,pathName) {
+  try {
+    const response = (await axios.get(url,{
+      responseType: "arraybuffer"
+    })).data;
 
- for (let i = 0; i < numChunks; i++) {
- const start = i * chunkSize;
- const end = Math.min(start + chunkSize - 1, totalSize - 1);
- chunks.push(downloadChunk(url, start, end, i));
- }
-
- try {
- const buffers = await Promise.all(chunks);
-
- const fileStream = fs.createWriteStream(filePath);
- for (const buffer of buffers) {
- fileStream.write(Buffer.from(buffer));
- }
-
- await new Promise((resolve, reject) => {
- fileStream.on("finish", resolve);
- fileStream.on("error", reject);
- fileStream.end();
- });
- } catch (error) {
- console.error("Error downloading or writing the file:", error);
- }
-                        }
+    fs.writeFileSync(pathName, Buffer.from(response));
+    return fs.createReadStream(pathName);
+  }
+  catch (err) {
+    throw err;
+  }
+}
+async function diptoSt(url,pathName) {
+  try {
+    const response = await axios.get(url,{
+      responseType: "stream"
+    });
+    response.data.path = pathName;
+    return response.data;
+  }
+  catch (err) {
+    throw err;
+  }
+  }
