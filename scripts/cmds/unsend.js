@@ -1,12 +1,10 @@
-const { GoatWrapper } =
-require("fca-liane-utils");
 module.exports = {
 	config: {
-		name: "uns",
+		name: "unsend",
 		version: "1.2",
 		author: "NTKhang",
 		countDown: 5,
-		role: 2,
+		role: 0,
 		description: {
 			vi: "Gỡ tin nhắn của bot",
 			en: "Unsend bot's message"
@@ -17,6 +15,7 @@ module.exports = {
 			en: "reply the message you want to unsend and call the command {pn}"
 		}
 	},
+
 	langs: {
 		vi: {
 			syntaxError: "Vui lòng reply tin nhắn muốn gỡ của bot"
@@ -25,11 +24,10 @@ module.exports = {
 			syntaxError: "Please reply the message you want to unsend"
 		}
 	},
+
 	onStart: async function ({ message, event, api, getLang }) {
-if (!event.messageReply || event.messageReply.senderl D != api.getCurrentUserID())
-return
-message.reply(getLang("synt axError"));
-message.unsend(event.messageReply.messageID); }
+		if (!event.messageReply || event.messageReply.senderID != api.getCurrentUserID())
+			return message.reply(getLang("syntaxError"));
+		message.unsend(event.messageReply.messageID);
+	}
 };
-const wrapper = new GoatWrapper(module.export s);
-wrapper.applyNoPrefix({ allowPrefix: true });
