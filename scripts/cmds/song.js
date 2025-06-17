@@ -8,7 +8,7 @@ module.exports = {
   config: {
     name: "song",
     version: "3.0",
-    author: "GoatMart",
+    author: "ROBIUL",
     countDown: 5,
     role: 0,
     longDescription: { en: "Search and download audio from YouTube" },
