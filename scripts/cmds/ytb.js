@@ -13,7 +13,7 @@ module.exports = {
   config: {
     name: "ytb",
     version: "4.0.0",
-    author: "GoatMart",
+    author: "ROBIUL",
     countDown: 5,
     role: 0,
     description: {
