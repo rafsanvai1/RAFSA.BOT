@@ -9,7 +9,7 @@ module.exports = {
     name: "video",
     aliases: [],
     version: "1.4.3",
-    author: "ROBIUL",
+    author: "ROBIUL 😻",
     countDown: 5,
     role: 0,
     shortDescription: "Download YouTube video or audio by name or URL",
