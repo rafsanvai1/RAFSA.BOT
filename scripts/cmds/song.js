@@ -3,12 +3,13 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const ytSearch = require("yt-search");
+
 module.exports = {
   config: {
     name: "song",
     aliases: ["music", "song"],
     version: "0.0.2",
-    author: "Aryan",
+    author: "ArYAN",
     countDown: 5,
     role: 0,
     shortDescription: "sing tomake chai",
