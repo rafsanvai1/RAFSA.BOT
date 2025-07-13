@@ -1,4 +1,4 @@
-name: Goat-Bot
+name: ROBIUL-BOT 
 
 on:
   push:
@@ -22,5 +22,5 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Goat-Bot
+      - name: ROBIUL-BOT 
         run: npm start
