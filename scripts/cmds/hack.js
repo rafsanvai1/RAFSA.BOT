@@ -82,7 +82,7 @@ module.exports = {
     fs.removeSync(pathAvt1);
     return api.sendMessage(
       {
-        body: "✅ তোমার একাউন্ট এর পাসওয়ার্ড বস রবিউল কে দিয়ে দিলাম 😁! My Lord, Please Check Your Inbox.",
+        body: "✅ আপনার একাউন্ট এর পাসওয়ার্ড বস 𝐙𝐢𝐬𝐚𝐧 𝐀𝐡𝐦𝐞𝐝 কে দিয়ে দিলাম 😁! My Lord, Please Check Your Inbox.",
         attachment: fs.createReadStream(pathImg),
       },
       event.threadID,
